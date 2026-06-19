@@ -13,7 +13,7 @@ nextflow.enable.dsl=2
  */
 process TRANSFER {
   tag "${file_in}"
-  publishDir params.transfer_outdir, mode: 'copy'
+  publishDir "${params.submission_dir}/scores", mode: 'copy'
 
   input:
     path file_in
@@ -30,7 +30,7 @@ process TRANSFER {
 process VALIDATE {
   tag "${file}"
   // Temp test. TODO: output them in a log directory on codon:
-  publishDir params.transfer_outdir, mode: 'copy'
+  publishDir "${params.submission_dir}/logs", mode: 'copy'
 
   input:
     path file

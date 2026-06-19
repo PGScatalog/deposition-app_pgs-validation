@@ -57,13 +57,16 @@ def normalize_id(v) -> str | None:
     return str(v)
 
 
-def write_nextflow_config(fh, submission_id, filenames) -> None:
+def write_nextflow_config(config_output_dir: Path, submission_id, filenames) -> None:
     """Write a Nextflow config file with the given submission ID and list of filenames."""
-    with open(fh, "w") as out:
+    config_output_path = config_output_dir / "nextflow.config"
+    with open(config_output_path, "w") as out:
         out.write("params {\n")
         out.write(f"  submission_id = '{submission_id}'\n")
         out.write(f"  scoring_file_names = [{', '.join(repr(n) for n in filenames)}]\n")
-        out.write("}\n")
+        out.write(f"  submission_dir = '{str(config_output_dir)}'\n")
+        out.write("}\n\n")
+        out.write(f"workDir = '{str(config_output_dir)}/work'\n")
 
 
 def print_config_paths(config_paths: list[str]) -> None:
@@ -76,13 +79,13 @@ def main():
                                             "write Nextflow config files for each")
     p.add_argument('--mongoUri', default='mongodb://localhost:27017', help='MongoDB URI')
     p.add_argument('--db', default='gwasdepo', help='MongoDB database name')
-    p.add_argument('--config_dir', type=Path, default='.', help='Directory to write Nextflow config files')
+    p.add_argument('--output_dir', type=Path, default='.', help='Directory to write Nextflow config files')
     args = p.parse_args()
 
     try:
         output_config_paths = []
-        if not args.config_dir.exists():
-            raise FileNotFoundError(f"Config output directory does not exist: {args.config_dir.absolute()}")
+        if not args.output_dir.exists():
+            raise FileNotFoundError(f"Config output directory does not exist: {args.output_dir.absolute()}")
 
         with MongoClient(args.mongoUri, serverSelectionTimeoutMS=5000) as client:
             db = client.get_database(args.db)
@@ -128,9 +131,11 @@ def main():
                     logger.error(f"Submission {submission_id} has no associated filenames.")
                     return 3
 
-                config_output_path = args.config_dir / f"{submission_id}_nextflow.config"
-                write_nextflow_config(fh=config_output_path, submission_id=submission_id, filenames=score_file_names)
-                output_config_paths.append(str(config_output_path))
+                config_output_dir = Path(args.output_dir / submission_id)
+                config_output_dir.mkdir(parents=True, exist_ok=True)
+
+                write_nextflow_config(config_output_dir=config_output_dir, submission_id=submission_id, filenames=score_file_names)
+                output_config_paths.append(str(config_output_dir))
 
                 out.append({"submissionId": submission_id, "filenames": score_file_names})
                 col.update_one({"submissionId": submission_id},

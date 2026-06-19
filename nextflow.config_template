@@ -2,10 +2,7 @@ params {
   input_dir = ''
   mongoUri = 'mongodb://localhost:27017'
   mongoDb = 'gwasdepo'
-  transfer_outdir = ''
 }
-
-workDir = ''
 
 process {
   cpus = 1
