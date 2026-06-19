@@ -1,4 +1,4 @@
-pymongo
+pymongo==3.12.3
 pgscatalog-utils==2.0.2
 # Using local wheel for pgscatalog-validate since it's not published on PyPI yet
 ./lib/pgscatalog_validate-0.3-py3-none-any.whl
