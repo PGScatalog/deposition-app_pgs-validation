@@ -1,0 +1,38 @@
+params {
+  input_dir = ''
+  mongoUri = 'mongodb://localhost:27017'
+  mongoDb = 'gwasdepo'
+  transfer_outdir = ''
+}
+
+workDir = ''
+
+process {
+  cpus = 1
+  memory = '1 GB'
+  time = '30min'
+}
+
+env {
+    PYTHONPATH = "${projectDir}/lib"
+}
+
+profiles {
+
+  slurm {
+    process {
+      executor = 'slurm'
+      withName: TRANSFER {
+        queue = 'datamover'
+        time = '15min'
+      }
+    }
+  }
+
+  local {
+    process {
+      executor = 'local'
+    }
+  }
+
+}

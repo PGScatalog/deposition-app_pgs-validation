@@ -1,0 +1,6 @@
+.nextflow*
+/*.config
+.vscode
+.venv
+venv
+.idea
