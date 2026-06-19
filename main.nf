@@ -7,23 +7,45 @@ nextflow.enable.dsl=2
  * Copies input files to an external output directory via publishDir.
  *
  * Notes:
- * - Input files are already staged into the task work directory by Nextflow.
- * - No explicit cp command is required.
- * - publishDir handles the actual export/copy operation.
+ * - file_in might not exist yet (waiting for the FTP transfer to complete), so we poll for it every 10min for up to 1 hour.
+ * - a new transfer attempt is triggered if the file is still not found after 1 hour (exit code 75).
+ * - the actual copy is done in the work directory so that Nextflow can stage and publish it.
  */
 process TRANSFER {
   tag "${file_in}"
   publishDir "${params.submission_dir}/scores", mode: 'copy'
 
+  errorStrategy { task.exitStatus == 75 ? 'retry' : 'terminate' }
+  maxRetries 5
+
   input:
-    path file_in
+    val file_in  // val to avoid early staging
 
   output:
-    path file_in
+    path "./${file(file_in).name}"
 
   script:
+    def filename = file(file_in).name
     """
-    true
+    # Poll every 10min for up to 1 hour (6 attempts × 600s = 3600s)
+    found=false
+    for i in \$(seq 1 6); do
+      if [ -f "${file_in}" ]; then
+        found=true
+        break
+      fi
+      echo "Attempt \$i: ${file_in} not found, waiting 60s..."
+      sleep 600
+    done
+
+    # Exit code 75 triggers retry; other failures terminate
+    if [ "\$found" = false ]; then
+      echo "File not found after 1 hour"
+      exit 75
+    fi
+
+    # Copy into work dir so Nextflow can stage/publish it
+    cp "${file_in}" "./${filename}"
     """
 }
 
