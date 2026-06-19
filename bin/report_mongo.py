@@ -8,7 +8,7 @@ import datetime as dt
 
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
-from pymongo.synchronous.collection import Collection
+from pymongo.collection import Collection
 from pymongo.database import Database
 
 from pgs_deposition.constants import SUBMISSION_COLLECTION, SCORINGFILE_COLLECTION
